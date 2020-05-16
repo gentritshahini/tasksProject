@@ -25,9 +25,6 @@ const store = new Vuex.Store({
             state.is_logged = true;
             state.user = JSON.stringify(data.user);
             localStorage.setItem('access_token', data.access_token);
-            if (state.user != null) {
-                state.is_admin = (JSON.parse(state.user).role) === 'admin';
-            }
             localStorage.setItem('user', JSON.stringify(data.user));
         },
         logout(state) {
@@ -35,10 +32,6 @@ const store = new Vuex.Store({
             state.is_logged = false;
             state.user = null;
             localStorage.clear();
-        },
-        storeAuthUser(state, data) {
-            state.user = JSON.stringify(data);
-            localStorage.setItem('user', state.user);
         }
     },
     actions: {
