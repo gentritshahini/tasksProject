@@ -10938,10 +10938,12 @@ body {
   font-size: 14px !important;
 }
 
-.navbar {
-  background-color: #fff !important;
-  border-bottom: 1px solid #c2c2c2;
-  min-height: 75px;
+.navbar-parent {
+  background-color: #fff;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
 }
 
 .navbar-brand {
