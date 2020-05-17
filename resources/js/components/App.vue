@@ -2,9 +2,7 @@
     <div>
         <div id="wrapper">
             <app-navbar v-if="isLogged"></app-navbar>
-            <div class="container">
-                <router-view></router-view>
-            </div>
+            <router-view></router-view>
         </div>
         <!-- set progressbar -->
         <vue-progress-bar></vue-progress-bar>
@@ -27,5 +25,10 @@
 </script>
 
 <style scoped>
-
+    #wrapper {
+        width: 100%;
+        height: 100vh;
+        display: table;
+        overflow: hidden;
+    }
 </style>

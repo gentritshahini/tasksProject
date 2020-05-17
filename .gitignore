@@ -21,3 +21,5 @@ yarn-error.log
 *.xml
 *.xml
 *.xml
+*.xml
+.idea/workspace.xml

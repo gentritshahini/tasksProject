@@ -71,4 +71,14 @@
     .navbar-nav .dropdown-menu {
         position: absolute;
     }
+    .navbar-parent {
+        background-color: #4c5566;
+        width: 200px;
+        height: 100vh;
+        display: table-cell;
+        vertical-align: top;
+    }
+    a.navbar-brand, .navbar-nav .nav-link {
+        color: #ffffff;
+    }
 </style>
