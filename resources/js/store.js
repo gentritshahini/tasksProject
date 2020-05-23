@@ -6,7 +6,8 @@ const store = new Vuex.Store({
     state: {
         access_token: localStorage.getItem('access_token') || null,
         is_logged: localStorage.getItem('access_token') != null,
-        user: localStorage.getItem('user') || null
+        user: localStorage.getItem('user') || null,
+        tasks: []
     },
     getters: {
         getAccessToken(state) {
@@ -17,6 +18,9 @@ const store = new Vuex.Store({
         },
         user(state) {
             return JSON.parse(state.user);
+        },
+        tasks(state) {
+            return state.tasks.reverse();
         }
     },
     mutations: {
@@ -32,6 +36,14 @@ const store = new Vuex.Store({
             state.is_logged = false;
             state.user = null;
             localStorage.clear();
+        },
+        storeTask(state, data) {
+            state.tasks.push(data)
+        },
+        deleteTaskById(state, id) {
+            const task = state.tasks.find((task) => task.id === id)
+            const index = state.tasks.indexOf(task);
+            state.tasks.splice(index, 1);
         }
     },
     actions: {
@@ -47,7 +59,6 @@ const store = new Vuex.Store({
                         reject(err);
                     })
             })
-
         },
         register({commit}, data) {
             return new Promise((resolve, reject) => {
@@ -66,7 +77,35 @@ const store = new Vuex.Store({
             if (context.getters.isLogged) {
                 context.commit('logout')
             }
-        }
+        },
+        createNewTask({commit}) {
+            axios.post('/task/create')
+                .then((res) => {
+                    let response = res.data.data;
+                    commit('storeTask', response);
+                })
+        },
+        getAllTasks({commit}) {
+            axios.get('/tasks/all')
+                .then((res) => {
+                    let response = res.data.data;
+                    response.forEach((res) => {
+                        commit('storeTask', res);
+                    })
+                })
+        },
+        deleteTask({commit}, data) {
+            return new Promise((resolve, reject) => {
+                axios.post('/task/delete', data)
+                    .then((res) => {
+                        commit('deleteTaskById', data.id)
+                        resolve(res)
+                    })
+                    .catch((err) => {
+                        reject(err);
+                    })
+            })
+        },
     }
 });
 export default store

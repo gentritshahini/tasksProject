@@ -7,37 +7,24 @@
                         <h1>Tasks</h1>
                     </div>
                     <div class="ml-auto">
-                        <button class="btn btn-success btn-sm" type="button">
+                        <button @click="createNewTask" class="btn btn-success btn-sm">
                             <font-awesome-icon icon="plus" class="icon alt" />
                         </button>
                     </div>
                 </div>
                 <div class="main-content">
-                    <div class="list-of-tasks">
-                        <div @click="showActiveEditingTask(1)"  id="task-1" :class="'task-box'
-                        + (activeTask === 1 ? ' active' : '')
-                        + (editingTask === 1 ? ' editing' : '')
-                         + (checkifDone(1) ? ' done' : '') ">
+                    <div v-if="tasks.length > 0"  class="list-of-tasks">
+                        <div v-for="task in tasks"  @click="showActiveEditingTask(task.id)"  :id="'task-' + task.id" :class="'task-box'
+                        + (activeTask ? activeTask.id === task.id ? ' active' : '' : '')
+                        + (editingTask ? editingTask.id === task.id ? ' editing' : '' : '')
+                         + (checkifDone(task.id) ? ' done' : '') ">
                             <div class="view">
                                 <div class="checkbox">
-                                    <input @change="finishedTask(1, $event)" class="toggle" type="checkbox">
-                                    <span class="task-name">New task</span>
-                                    <input @focusout="editingTask = null" class="edit form-control" type="text" value="New task">
+                                    <input @change="finishedTask(task.id, $event)" class="toggle" type="checkbox">
+                                    <span class="task-name">{{ task.title }}</span>
+                                    <input @focusout="focustOutFromInput(task.id)" class="edit form-control" type="text" :value="task.title">
                                 </div>
-                                <button class="close destroy">×</button>
-                            </div>
-                        </div>
-                        <div @click="showActiveEditingTask(2)"  id="task-2" :class="'task-box'
-                        + (activeTask === 2 ? ' active' : '')
-                        + (editingTask === 2 ? ' editing' : '')
-                         + (checkifDone(2) ? ' done' : '') ">
-                            <div class="view">
-                                <div class="checkbox">
-                                    <input @change="finishedTask(2, $event)" class="toggle" type="checkbox">
-                                    <span class="task-name">New task</span>
-                                    <input @focusout="editingTask = null" class="edit form-control" type="text" value="New task">
-                                </div>
-                                <button class="close destroy">×</button>
+                                <button @click.stop="deleteTask(task.id)" class="close destroy">×</button>
                             </div>
                         </div>
                     </div>
@@ -49,38 +36,33 @@
                 </div>
             </div>
             <div ref="parentTaskComments" class="box-tasks-comments-parent">
-                <div class="top-content">
-                    <h2>Created: <span>May 17th, 12:55 pm</span></h2>
-                </div>
-                <div ref="taskDescription" class="task-description-content">
-                    <textarea placeholder="Task description"></textarea>
-                </div>
-                <div class="comments-content" :style="'height:'+ commentsHeight + 'px;'">
-                    <div class="comments-list">
-                        <div class="comment-box view">
-                            <div>
-                                <span>nvbcfhgc</span>
-                                <small class="text-muted block text-xs"><font-awesome-icon icon="clock" class="icon alt"/> a few seconds ago</small>
+                <template v-if="activeTask">
+                    <div class="top-content">
+                        <h2>Created: <span>{{ activeTask.created_at }}</span></h2>
+                    </div>
+                    <div ref="taskDescription" class="task-description-content">
+                        <textarea placeholder="Task description">{{ activeTask.description }}</textarea>
+                    </div>
+                    <div class="comments-content">
+                        <div v-if="activeTask.comments" class="comments-list">
+                            <div v-for="item in activeTask.comments" class="comment-box view">
+                                <div>
+                                    <span>{{ item.comment }}</span>
+                                    <small class="text-muted block text-xs"><font-awesome-icon icon="clock" class="icon alt"/> a few seconds ago</small>
+                                </div>
+                                <button class="destroy close">×</button>
                             </div>
-                            <button class="destroy close">×</button>
-                        </div>
-                        <div class="comment-box view">
-                            <div>
-                                <span>nvbcfhgc</span>
-                                <small class="text-muted block text-xs"><font-awesome-icon icon="clock" class="icon alt"/> a few seconds ago</small>
-                            </div>
-                            <button class="destroy close">×</button>
                         </div>
                     </div>
-                </div>
-                <div class="footer-content">
-                    <div class="input-group">
-                        <input type="text" class="form-control" placeholder="Type a comment">
-                        <span class="input-group-btn">
+                    <div class="footer-content">
+                        <div class="input-group">
+                            <input type="text" class="form-control" placeholder="Type a comment">
+                            <span class="input-group-btn">
                             <button class="btn btn-success btn-sm" type="button"><font-awesome-icon icon="pen" class="icon alt" /></button>
                         </span>
+                        </div>
                     </div>
-                </div>
+                </template>
             </div>
         </div>
     </div>
@@ -91,19 +73,17 @@
         name: "home",
         data: function () {
             return {
-                commentsHeight: 0,
                 activeTask: null,
                 editingTask: null,
-                tasksDone: []
+                tasksDone: [],
+                tasks: []
             }
         },
         mounted() {
-            this.checkCommentsHeight();
+            this.$store.dispatch('getAllTasks')
+            this.tasks = this.$store.getters.tasks;
         },
         methods: {
-            checkCommentsHeight() {
-                this.commentsHeight = this.$refs.parentTaskComments.clientHeight - this.$refs.taskDescription.clientHeight - 104;
-            },
             checkifDone(id) {
                 if(this.tasksDone.includes(id)) {
                     return true
@@ -113,14 +93,37 @@
             },
             finishedTask(id, event) {
                 const checked = event.target.checked;
-                this.activeTask = id;
+                this.activeTask = this.tasks.find((task) => task.id === id);
                 if (checked) {
                     this.tasksDone.push(id)
+                } else {
+                    const index = this.tasksDone.indexOf(id);
+                    this.tasksDone.splice(index, 1);
                 }
             },
             showActiveEditingTask(id) {
-                this.activeTask = id;
-                this.editingTask = id;
+                this.editingTask = this.activeTask = this.tasks.find((task) => task.id === id)
+            },
+            focustOutFromInput(id) {
+                this.editingTask = null;
+            },
+            createNewTask() {
+                this.$store.dispatch('createNewTask')
+            },
+            deleteTask(id) {
+                this.$store.dispatch('deleteTask', {
+                    id
+                })
+                    .then(response => {
+                        this.tasks = this.$store.getters.tasks;
+                        if (this.activeTask.id === id) {
+                            this.activeTask = null
+                            this.editingTask = null
+                        }
+                    })
+                    .catch(err => {
+                        console.log(err)
+                    })
             }
         }
     }
@@ -261,6 +264,10 @@
         margin-left: auto;
         display: none;
     }
+    .task-box .view button.close:focus {
+        outline: none;
+        box-shadow: none;
+    }
     .task-box:hover .view button.close {
         display: block;
     }
@@ -311,6 +318,9 @@
     .comment-box.view button.close {
         margin-left: auto;
         display: none;
+        @apply absolute;
+        right: 15px;
+        z-index: 999;
     }
     .comment-box.view:hover button.close {
         display: block;
@@ -321,9 +331,10 @@
     .comments-content {
         position: relative;
         overflow: hidden;
+        height: calc(100vh - 310px);
     }
     .comments-content .comments-list {
-        width: 100%;
+        width: calc(100% + 17px);
         height: 100%;
         overflow-y: scroll;
         padding-right: 17px;
