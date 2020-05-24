@@ -44,6 +44,27 @@ const store = new Vuex.Store({
             const task = state.tasks.find((task) => task.id === id)
             const index = state.tasks.indexOf(task);
             state.tasks.splice(index, 1);
+        },
+        updateTaskById(state, data) {
+            const task = state.tasks.find((task) => task.id === data.id)
+            if (data.title) {
+                task.title = data.title
+            }
+            if (data.description) {
+                task.description = data.description
+            }
+            if (data.finished) {
+                task.finished = data.finished
+            }
+        },
+        createCommentforTask(state, data) {
+            const task = state.tasks.find((task) => task.id === data.task_id)
+            task.comments.push(data)
+        },
+        deleteCommentofTask(state, data) {
+            const task = state.tasks.find((item) => item.id === data.task_id);
+            const index = task.comments.findIndex((comment) => comment.id === data.id)
+            task.comments.splice(index, 1)
         }
     },
     actions: {
@@ -99,13 +120,81 @@ const store = new Vuex.Store({
                 axios.post('/task/delete', data)
                     .then((res) => {
                         commit('deleteTaskById', data.id)
-                        resolve(res)
                     })
                     .catch((err) => {
                         reject(err);
                     })
             })
         },
+        updateTaskTitle({commit}, data) {
+            return new Promise((resolve, reject) => {
+                axios.post('/task/update', {
+                    'id': data.id,
+                    'title': data.title
+                })
+                    .then((res) => {
+                        commit('updateTaskById', res.data.data)
+                    })
+                    .catch((err) => {
+                        reject(err);
+                    })
+            })
+        },
+        updateTaskDescription({commit}, data) {
+            return new Promise((resolve, reject) => {
+                axios.post('/task/update', {
+                    'id': data.id,
+                    'description': data.description
+                })
+                    .then((res) => {
+                        commit('updateTaskById', res.data.data)
+                    })
+                    .catch((err) => {
+                        reject(err);
+                    })
+            })
+        },
+        updateTaskFinished({commit}, data) {
+            return new Promise((resolve, reject) => {
+                axios.post('/task/update', {
+                    'id': data.id,
+                    'finished': data.finished
+                })
+                    .then((res) => {
+                        commit('updateTaskById', res.data.data)
+                    })
+                    .catch((err) => {
+                        reject(err);
+                    })
+            })
+        },
+        createComment({commit}, data) {
+            return new Promise((resolve, reject) => {
+                axios.post('/comment/create', {
+                    'task_id': data.id,
+                    'comment': data.comment
+                })
+                    .then((res) => {
+                        commit('createCommentforTask', res.data.data)
+                    })
+                    .catch((err) => {
+                        reject(err);
+                    })
+            })
+        },
+        deleteComment({commit}, data) {
+            return new Promise((resolve, reject) => {
+                axios.post('/comment/delete', {
+                    'id': data.id
+                })
+                    .then((res) => {
+                        commit('deleteCommentofTask', data)
+                    })
+                    .catch((err) => {
+                        reject(err);
+                    })
+            })
+        }
     }
 });
 export default store

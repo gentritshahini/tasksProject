@@ -14,15 +14,15 @@
                 </div>
                 <div class="main-content">
                     <div v-if="tasks.length > 0"  class="list-of-tasks">
-                        <div v-for="task in tasks"  @click="showActiveEditingTask(task.id)"  :id="'task-' + task.id" :class="'task-box'
+                        <div v-model="tasks" v-for="(task, index) in tasks"  @click="showActiveEditingTask(index)"  :id="'task-' + task.id" :class="'task-box'
                         + (activeTask ? activeTask.id === task.id ? ' active' : '' : '')
                         + (editingTask ? editingTask.id === task.id ? ' editing' : '' : '')
-                         + (checkifDone(task.id) ? ' done' : '') ">
+                         + (task.finished ? ' done' : '') ">
                             <div class="view">
                                 <div class="checkbox">
-                                    <input @change="finishedTask(task.id, $event)" class="toggle" type="checkbox">
+                                    <input v-model="tasks[index].finished" @change="finishedTask(index)" class="toggle" type="checkbox">
                                     <span class="task-name">{{ task.title }}</span>
-                                    <input @focusout="focustOutFromInput(task.id)" class="edit form-control" type="text" :value="task.title">
+                                    <input v-model="tasks[index].title" @focusout="focustOutFromInput(index)" class="edit form-control" type="text">
                                 </div>
                                 <button @click.stop="deleteTask(task.id)" class="close destroy">×</button>
                             </div>
@@ -31,7 +31,7 @@
                 </div>
                 <div class="footer-content">
                     <div class="checkbox">
-                        <label><input id="toggle-all" type="checkbox"> Mark all as complete</label>
+                        <label><input v-model="tasksAllChecked" @change="markAllasChecked()" id="toggle-all" type="checkbox"> Mark all as complete</label>
                     </div>
                 </div>
             </div>
@@ -41,7 +41,7 @@
                         <h2>Created: <span>{{ activeTask.created_at }}</span></h2>
                     </div>
                     <div ref="taskDescription" class="task-description-content">
-                        <textarea placeholder="Task description">{{ activeTask.description }}</textarea>
+                        <textarea v-model="tasks[activeTask.index].description" @focusout="focustOutFromDescription(activeTask.index)" placeholder="Task description"></textarea>
                     </div>
                     <div class="comments-content">
                         <div v-if="activeTask.comments" class="comments-list">
@@ -50,15 +50,15 @@
                                     <span>{{ item.comment }}</span>
                                     <small class="text-muted block text-xs"><font-awesome-icon icon="clock" class="icon alt"/> a few seconds ago</small>
                                 </div>
-                                <button class="destroy close">×</button>
+                                <button @click="deleteComment(item.id)" class="destroy close">×</button>
                             </div>
                         </div>
                     </div>
                     <div class="footer-content">
                         <div class="input-group">
-                            <input type="text" class="form-control" placeholder="Type a comment">
+                            <input v-model="comment" type="text" class="form-control" placeholder="Type a comment">
                             <span class="input-group-btn">
-                            <button class="btn btn-success btn-sm" type="button"><font-awesome-icon icon="pen" class="icon alt" /></button>
+                            <button @click="submitComment" class="btn btn-success btn-sm" type="button"><font-awesome-icon icon="pen" class="icon alt" /></button>
                         </span>
                         </div>
                     </div>
@@ -76,7 +76,9 @@
                 activeTask: null,
                 editingTask: null,
                 tasksDone: [],
-                tasks: []
+                tasks: [],
+                tasksAllChecked: false,
+                comment: null
             }
         },
         mounted() {
@@ -84,46 +86,105 @@
             this.tasks = this.$store.getters.tasks;
         },
         methods: {
-            checkifDone(id) {
-                if(this.tasksDone.includes(id)) {
-                    return true
-                }
-
-                return false
-            },
-            finishedTask(id, event) {
-                const checked = event.target.checked;
-                this.activeTask = this.tasks.find((task) => task.id === id);
-                if (checked) {
-                    this.tasksDone.push(id)
+            markAllasChecked() {
+                if(this.tasksAllChecked) {
+                    this.tasks.forEach((task, index) => {
+                        if(!task.finished) {
+                            task.finished = 1
+                            this.updateTaskFinished(index)
+                        }
+                    })
                 } else {
-                    const index = this.tasksDone.indexOf(id);
+                    this.tasks.forEach((task, index) => {
+                        if(task.finished) {
+                            task.finished = 0
+                            this.updateTaskFinished(index)
+                        }
+                    })
+                }
+            },
+            finishedTask(index) {
+                this.activeTask = this.tasks[index];
+                this.activeTask.index = index
+                if (this.activeTask.finished) {
+                    this.tasksDone.push(this.activeTask.id)
+                } else {
                     this.tasksDone.splice(index, 1);
                 }
+                this.updateTaskFinished(index)
             },
-            showActiveEditingTask(id) {
-                this.editingTask = this.activeTask = this.tasks.find((task) => task.id === id)
+            showActiveEditingTask(index) {
+                this.editingTask = this.activeTask = this.tasks[index]
+                this.editingTask.index = this.activeTask.index = index
             },
-            focustOutFromInput(id) {
+            focustOutFromInput(index) {
                 this.editingTask = null;
+                this.updateTaskTitle(index);
+            },
+            focustOutFromDescription(index) {
+                this.updateTaskDescription(index);
             },
             createNewTask() {
                 this.$store.dispatch('createNewTask')
             },
             deleteTask(id) {
+                if (this.activeTask) {
+                    if (this.activeTask.id === id) {
+                        this.activeTask = null
+                        this.editingTask = null
+                    }
+                }
                 this.$store.dispatch('deleteTask', {
                     id
-                })
-                    .then(response => {
-                        this.tasks = this.$store.getters.tasks;
-                        if (this.activeTask.id === id) {
-                            this.activeTask = null
-                            this.editingTask = null
-                        }
+                }).catch(err => {
+                        console.log(err)
                     })
+            },
+            updateTaskTitle(index) {
+                let data = [];
+                data.id = this.tasks[index].id
+                data.title = this.tasks[index].title
+                this.$store.dispatch('updateTaskTitle', data)
                     .catch(err => {
                         console.log(err)
                     })
+            },
+            updateTaskDescription(index) {
+                let data = [];
+                data.id = this.tasks[index].id
+                data.description = this.tasks[index].description
+                this.$store.dispatch('updateTaskDescription', data)
+                    .catch(err => {
+                        console.log(err)
+                    })
+            },
+            updateTaskFinished(index) {
+                let data = [];
+                data.id = this.tasks[index].id
+                data.finished = this.tasks[index].finished
+                this.$store.dispatch('updateTaskFinished', data)
+                    .catch(err => {
+                        console.log(err)
+                    })
+            },
+            submitComment() {
+                let data = [];
+                data.id = this.activeTask.id
+                data.comment = this.comment
+                this.$store.dispatch('createComment', data)
+                    .catch(err => {
+                        console.log(err)
+                    })
+                this.activeTask = this.tasks.find((task) => task.id === data.id)
+                this.comment = null
+            },
+            deleteComment(id) {
+                let data = [];
+                data.id = id
+                data.task_id = this.activeTask.id
+                this.$store.dispatch('deleteComment', data).catch(err => {
+                    console.log(err)
+                })
             }
         }
     }
