@@ -3,8 +3,8 @@
         <div class="parent-box">
             <div class="box-tasks-parent">
                 <div class="top-content">
-                    <div>
-                        <h1>Tasks</h1>
+                    <div class="search-input">
+                        <input v-model="searchValue" @change="SearchForTasks()" type="text" placeholder="Search" />
                     </div>
                     <div class="ml-auto">
                         <button @click="createNewTask" class="btn btn-success btn-sm">
@@ -29,16 +29,19 @@
                         </div>
                     </div>
                 </div>
-                <div class="footer-content">
+                <div class="footer-content d-flex">
                     <div class="checkbox">
                         <label><input v-model="tasksAllChecked" @change="markAllasChecked()" id="toggle-all" type="checkbox"> Mark all as complete</label>
+                    </div>
+                    <div v-if="searchValue" class="btn-show-all ml-auto">
+                        <button @click="showAllTasks" class="btn btn-success">Show All Tasks</button>
                     </div>
                 </div>
             </div>
             <div ref="parentTaskComments" class="box-tasks-comments-parent">
                 <template v-if="activeTask">
                     <div class="top-content">
-                        <h2>Created: <span>{{ activeTask.created_at }}</span></h2>
+                        <h2>Created: <span>{{ activeTask.formated_date }}</span></h2>
                     </div>
                     <div ref="taskDescription" class="task-description-content">
                         <textarea v-model="tasks[activeTask.index].description" @focusout="focustOutFromDescription(activeTask.index)" placeholder="Task description"></textarea>
@@ -48,7 +51,7 @@
                             <div v-for="item in activeTask.comments" class="comment-box view">
                                 <div>
                                     <span>{{ item.comment }}</span>
-                                    <small class="text-muted block text-xs"><font-awesome-icon icon="clock" class="icon alt"/> a few seconds ago</small>
+                                    <small class="text-muted block text-xs"><font-awesome-icon icon="clock" class="icon alt"/> {{ item.formated_date }}</small>
                                 </div>
                                 <button @click="deleteComment(item.id)" class="destroy close">×</button>
                             </div>
@@ -78,7 +81,8 @@
                 tasksDone: [],
                 tasks: [],
                 tasksAllChecked: false,
-                comment: null
+                comment: null,
+                searchValue: null
             }
         },
         mounted() {
@@ -86,6 +90,13 @@
             this.tasks = this.$store.getters.tasks;
         },
         methods: {
+            showAllTasks() {
+                this.searchValue = null
+                this.tasks = this.$store.getters.tasks;
+            },
+            SearchForTasks() {
+                this.tasks = this.$store.getters.tasksFiltered(this.searchValue);
+            },
             markAllasChecked() {
                 if(this.tasksAllChecked) {
                     this.tasks.forEach((task, index) => {
@@ -171,11 +182,13 @@
                 let data = [];
                 data.id = this.activeTask.id
                 data.comment = this.comment
-                this.$store.dispatch('createComment', data)
-                    .catch(err => {
-                        console.log(err)
-                    })
-                this.activeTask = this.tasks.find((task) => task.id === data.id)
+                if (this.comment !== null) {
+                    this.$store.dispatch('createComment', data)
+                        .catch(err => {
+                            console.log(err)
+                        })
+                    this.activeTask = this.tasks.find((task) => task.id === data.id)
+                }
                 this.comment = null
             },
             deleteComment(id) {
@@ -221,6 +234,17 @@
         padding: 0 15px;
         border: 1px solid #e0e4e8;
         border-left: none;
+    }
+    .top-content .search-input {
+        padding: 10px 0;
+    }
+    .top-content .search-input input {
+        border-radius: 4px;
+        padding: 0 5px;
+    }
+    .top-content .search-input input:focus {
+        outline: none;
+        box-shadow: none;
     }
     .top-content h1 {
         font-size: 14px;
@@ -295,6 +319,9 @@
     .footer-content button {
         height: 30px;
         margin: 10px 0;
+    }
+    .box-tasks-parent .footer-content button {
+        padding: 0 10px;
     }
     .box-tasks-comments-parent .footer-content input:focus {
         box-shadow: none;
@@ -400,5 +427,29 @@
         overflow-y: scroll;
         padding-right: 17px;
         box-sizing: content-box;
+    }
+    @media (max-width: 991px) {
+        .parent-box .box-tasks-parent {
+            width: 40%;
+        }
+    }
+    @media (max-width: 767px) {
+        .parent-box .box-tasks-parent, .parent-box .box-tasks-comments-parent {
+            width: unset;
+        }
+        .content {
+            display: block;
+        }
+        .box-tasks-parent .main-content {
+            height: calc(100vh - 182px);
+        }
+        .comments-content {
+            height: calc(100vh - 390px);
+        }
+    }
+    @media (max-width: 575px) {
+        .parent-box .box-tasks-parent, .parent-box .box-tasks-comments-parent, .content .parent-box {
+            display: block;
+        }
     }
 </style>

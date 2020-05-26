@@ -31,4 +31,14 @@
         display: table;
         overflow: hidden;
     }
+    @media (max-width: 767px) {
+        #wrapper {
+            display: block;
+        }
+    }
+    @media (max-width: 575px) {
+        #wrapper {
+            overflow: unset;
+        }
+    }
 </style>

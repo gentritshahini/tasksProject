@@ -81,4 +81,14 @@
     a.navbar-brand, .navbar-nav .nav-link {
         color: #ffffff;
     }
+    @media (max-width: 767px) {
+        .navbar-parent {
+            width: 100%;
+            display: block;
+            height: 80px;
+        }
+        .navbar {
+            display: flex;
+        }
+    }
 </style>

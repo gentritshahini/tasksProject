@@ -31,10 +31,11 @@ class TasksController extends Controller
     public function destroy(Request $request){
         $id = $request->get('id');
         $user = User::getUser();
-        $task = Tasks::where('user_id', $user->id)->find($id);
+        $task = Tasks::with('comments')->where('user_id', $user->id)->find($id);
         if (!$task) {
             return $this->respondWithError([], 'Task does not exist', 404);
         }
+        $task->comments()->delete();
         $task->delete();
 
         return $this->respondWithSuccess();

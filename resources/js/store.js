@@ -21,6 +21,11 @@ const store = new Vuex.Store({
         },
         tasks(state) {
             return state.tasks.reverse();
+        },
+        tasksFiltered: (state) => (search) => {
+            const tasks = state.tasks.filter((task) => task.title.toLowerCase().search(search.toLowerCase()) !== -1)
+
+            return tasks.reverse();
         }
     },
     mutations: {
@@ -38,7 +43,7 @@ const store = new Vuex.Store({
             localStorage.clear();
         },
         storeTask(state, data) {
-            state.tasks.push(data)
+            state.tasks.unshift(data)
         },
         deleteTaskById(state, id) {
             const task = state.tasks.find((task) => task.id === id)
@@ -59,7 +64,7 @@ const store = new Vuex.Store({
         },
         createCommentforTask(state, data) {
             const task = state.tasks.find((task) => task.id === data.task_id)
-            task.comments.push(data)
+            task.comments.unshift(data)
         },
         deleteCommentofTask(state, data) {
             const task = state.tasks.find((item) => item.id === data.task_id);

@@ -25,9 +25,15 @@ body {
 .auth-pages .form-wrapper {
     border: 1px solid #c4c4c4;
     padding: 20px;
-    width: 400px;
+    max-width: 400px;
     background: #fff;
     text-align: center;
+}
+
+@media (max-width: 575px) {
+    .auth-pages .form-wrapper {
+        margin: 0 15px;
+    }
 }
 
 .auth-pages .project-name {
