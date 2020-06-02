@@ -95,6 +95,8 @@
                 this.tasks = this.$store.getters.tasks;
             },
             SearchForTasks() {
+                this.activeTask = null
+                this.editingTask = null
                 this.tasks = this.$store.getters.tasksFiltered(this.searchValue);
             },
             markAllasChecked() {
